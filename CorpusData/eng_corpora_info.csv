@@ -1,0 +1,5 @@
+eng_corpora,root folder (corpora name)
+1635,number of all texts
+179587551,number of all words in all texts
+938428,number of words types in all texts
+[^\w\s\-\'],pre-processing regex pattern
