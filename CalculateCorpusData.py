@@ -31,9 +31,11 @@ def read_corpora(main_folder_path, new_file_path):
             l_fqm_counter = Counter()
             l_fcm_counter = Counter()
             for key in l_F_counter:
-                l_fm_counter[key] = l_F_counter[key] / L
-                l_fqm_counter[key] = (l_F_counter[key] ** 2) / (L ** 2)
-                l_fcm_counter[key] = (l_F_counter[key] ** 2) / L
+                F = l_F_counter[key]
+                Fq = F ** 2
+                l_fm_counter[key] = F / L
+                l_fqm_counter[key] = Fq / (L ** 2)
+                l_fcm_counter[key] = Fq / L
                 g_nt_counter[key] += 1
             g_sumF_counter += l_F_counter
             g_fm_counter += l_fm_counter
@@ -44,17 +46,17 @@ def read_corpora(main_folder_path, new_file_path):
         print('{0:.2f} %'.format(processed_n/n*100))
     for key in g_fm_counter:
         g_fm_counter[key] /= n
-    for key in g_fqm_counter:
-        g_fqm_counter[key] /= n
     for key in g_sumF_counter:
-        g_fmw_counter[key] = g_sumF_counter[key] / SumL
-        g_sigma_counter[key] = math.sqrt(g_fqm_counter[key] - (g_fm_counter[key] ** 2))
-        g_sigmaw_counter[key] = math.sqrt((g_fcm_counter[key] - (g_sumF_counter[key] ** 2) / SumL) / SumL)
+        sumF = g_sumF_counter[key]
+        g_fmw_counter[key] = sumF / SumL
+        g_sigma_counter[key] = math.sqrt((g_fqm_counter[key] / n) - (g_fm_counter[key] ** 2))
+        g_sigmaw_counter[key] = math.sqrt((g_fcm_counter[key] - (sumF ** 2) / SumL) / SumL)
     SumTypes = len(list(g_sumF_counter))
     corpora_name = os.path.split(main_folder_path)[-1]
     path = os.path.join(new_file_path, corpora_name + '_info.csv')
     write_info(path, corpora_name, n, SumL, SumTypes, pattern)
-    return g_sumF_counter, g_fm_counter, g_fmw_counter, g_nt_counter, g_sigma_counter, g_sigmaw_counter
+    return g_sumF_counter, g_fm_counter, g_fmw_counter, g_nt_counter, g_sigma_counter, g_sigmaw_counter, \
+           g_fcm_counter, g_fqm_counter
 
 
 def write_info(path, corpora_name, n, sum_l, sum_types, pattern):
@@ -67,11 +69,11 @@ def write_info(path, corpora_name, n, sum_l, sum_types, pattern):
         writer.writerow([pattern, 'pre-processing regex pattern'])
 
 
-def write_dict(path, f, fm, fmw, n_t, sigma, sigmaw):
+def write_dict(path, F, fm, fmw, n_t, sigma, sigmaw, fc, fq):
     with open(path, 'w', newline='', encoding='utf-8') as dict_file:
         writer = csv.writer(dict_file)
-        for key in dict(f.most_common()):
-            writer.writerow([key, f[key], fm[key], fmw[key], n_t[key], sigma[key], sigmaw[key]])
+        for key in dict(F.most_common()):
+            writer.writerow([key, F[key], fm[key], fmw[key], n_t[key], sigma[key], sigmaw[key], fc[key], fq[key]])
 
 
 corpora_path = 'D:/Research/Corpora/eng_corpora'
@@ -80,10 +82,10 @@ current_path = os.path.dirname(os.path.abspath(__file__))
 new_path = os.path.join(current_path, 'CorpusData')
 if not os.path.exists(new_path):
     os.makedirs(new_path)
-f, fm, fmw, n_t, sigma, sigmaw = read_corpora(corpora_path, new_path)
+F, fm, fmw, n_t, sigma, sigmaw, fc, fq = read_corpora(corpora_path, new_path)
 corpora_name = os.path.split(corpora_path)[-1]
 path = os.path.join(new_path,corpora_name + '_dict.csv')
-write_dict(path, f, fm, fmw, n_t, sigma, sigmaw)
+write_dict(path, F, fm, fmw, n_t, sigma, sigmaw, fc, fq)
 # print(f.most_common(1000))
 # print(fm.most_common(1000))
 # print(fmw.most_common(1000))
