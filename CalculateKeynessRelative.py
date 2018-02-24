@@ -36,7 +36,17 @@ def read_text(path):
     return F_counter
 
 
-text_path = 'D:/Research/John Ronald Reuel Tolkien/LOTR.txt'
+def save_rang_result(path, counter):
+    with open(path, 'w', newline='', encoding='utf-8') as rang_file:
+        writer = csv.writer(rang_file)
+        i = 1
+        sumV = sum(counter.values())
+        for key, value in counter.most_common():
+            writer.writerow([i, key, value, value / sumV])
+            i += 1
+
+
+text_path = 'D:/Research/John Ronald Reuel Tolkien/LOTR_withoutContractions.txt'
 main_corpora_data_path = 'D:/Research/PythonProjects/CorpusData'
 corpora_name = 'eng_corpora'
 useMinF = True
@@ -87,22 +97,33 @@ for key in f_counter:
         sigmac = math.sqrt((words_corpora[key][7] / nc) - (fc ** 2))
         sigmawc = math.sqrt((words_corpora[key][6] - (Fc ** 2) / Lc) / Lc)
     words_corpora_corrected[key] = [Fc, fc, fwc, ntc, sigmac, sigmawc]
-rm1_counter = Counter({k: v * math.log10(nc/words_corpora_corrected[k][3]) for k, v in f_counter.items()})
-rm2_counter = Counter({k: v / words_corpora_corrected[k][1] for k, v in f_counter.items()})
-rm2w_counter = Counter({k: v / words_corpora_corrected[k][2] for k, v in f_counter.items()})
-rm3_counter = Counter({k: math.fabs((v - words_corpora_corrected[k][1])) / words_corpora_corrected[k][4]
-                       for k, v in f_counter.items()})
-rm3w_counter = Counter({k: math.fabs((v - words_corpora_corrected[k][2])) / words_corpora_corrected[k][5]
-                       for k, v in f_counter.items()})
-rm4_counter = Counter({k: (v / words_corpora_corrected[k][1]) * math.log10(nc/words_corpora_corrected[k][3])
-                       for k, v in f_counter.items()})
-rm4w_counter = Counter({k: (v / words_corpora_corrected[k][2]) * math.log10(nc/words_corpora_corrected[k][3])
-                       for k, v in f_counter.items()})
-rm5_counter = Counter({k: (math.fabs((v - words_corpora_corrected[k][1])) / words_corpora_corrected[k][4]) *
-                          math.log10(nc/words_corpora_corrected[k][3]) for k, v in f_counter.items()})
-rm5w_counter = Counter({k: (math.fabs((v - words_corpora_corrected[k][2])) / words_corpora_corrected[k][5]) *
-                          math.log10(nc/words_corpora_corrected[k][3]) for k, v in f_counter.items()})
-for k, v in rm3w_counter.most_common(10):
-    print(k, v)
+rm1_counter = Counter({k: f * math.log10(nc/words_corpora_corrected[k][3]) for k, f in f_counter.items()})
+rm2_counter = Counter({k: f / words_corpora_corrected[k][1] for k, f in f_counter.items()})
+rm2w_counter = Counter({k: f / words_corpora_corrected[k][2] for k, f in f_counter.items()})
+rm3_counter = Counter({k: (f - words_corpora_corrected[k][1]) / words_corpora_corrected[k][4]
+                       for k, f in f_counter.items()})
+rm3w_counter = Counter({k: (f - words_corpora_corrected[k][2]) / words_corpora_corrected[k][5]
+                       for k, f in f_counter.items()})
+rm4_counter = Counter({k: (f / words_corpora_corrected[k][1]) * math.log10(nc/words_corpora_corrected[k][3])
+                       for k, f in f_counter.items()})
+rm4w_counter = Counter({k: (f / words_corpora_corrected[k][2]) * math.log10(nc/words_corpora_corrected[k][3])
+                       for k, f in f_counter.items()})
+rm5_counter = Counter({k: ((f - words_corpora_corrected[k][1]) / words_corpora_corrected[k][4]) *
+                          math.log10(nc/words_corpora_corrected[k][3]) for k, f in f_counter.items()})
+rm5w_counter = Counter({k: ((f - words_corpora_corrected[k][2]) / words_corpora_corrected[k][5]) *
+                          math.log10(nc/words_corpora_corrected[k][3]) for k, f in f_counter.items()})
+current_path = os.path.dirname(os.path.abspath(__file__))
+new_path = os.path.join(current_path, 'ResultRelativeMethod')
+if not os.path.exists(new_path):
+    os.makedirs(new_path)
+save_rang_result(os.path.join(new_path, 'rm1.csv'), rm1_counter)
+save_rang_result(os.path.join(new_path, 'rm2.csv'), rm2_counter)
+save_rang_result(os.path.join(new_path, 'rm3.csv'), rm2w_counter)
+save_rang_result(os.path.join(new_path, 'rm4.csv'), rm3_counter)
+save_rang_result(os.path.join(new_path, 'rm5.csv'), rm3w_counter)
+save_rang_result(os.path.join(new_path, 'rm6.csv'), rm4_counter)
+save_rang_result(os.path.join(new_path, 'rm7.csv'), rm4w_counter)
+save_rang_result(os.path.join(new_path, 'rm8.csv'), rm5_counter)
+save_rang_result(os.path.join(new_path, 'rm9.csv'), rm5w_counter)
 print('n={0}, sum L={1}'.format(nc, Lc))
 print("time elapsed", time.perf_counter()-start_time, "s")
