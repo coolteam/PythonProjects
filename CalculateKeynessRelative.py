@@ -30,7 +30,7 @@ def read_text(path):
     lower_case_text = text.lower()
     prepared_text = re.sub(pattern, '', lower_case_text)
     splitted_text = prepared_text.split()
-    stripped_text = [el.strip('\'') for el in splitted_text]
+    stripped_text = [el.strip('\'-') for el in splitted_text]
     non_empty_text = [el for el in stripped_text if el]
     F_counter = Counter(non_empty_text)
     return F_counter
