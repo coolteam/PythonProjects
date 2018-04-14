@@ -31,7 +31,9 @@ def read_text(path):
     prepared_text = re.sub(pattern, '', lower_case_text)
     splitted_text = prepared_text.split()
     stripped_text = [el.strip('\'-') for el in splitted_text]
-    non_empty_text = [el for el in stripped_text if el]
+    remove_chars_pattern = r"[\'\-]"
+    cleared_text = [re.sub(remove_chars_pattern, '', el) for el in stripped_text]
+    non_empty_text = [el for el in cleared_text if el]
     F_counter = Counter(non_empty_text)
     return F_counter
 
@@ -52,7 +54,7 @@ def save_rang_result(path, counter, F_counter, f_counter, top_n=None):
 
 text_path = 'D:/Research/John Ronald Reuel Tolkien/LOTR.txt'
 main_corpora_data_path = 'D:/Research/PythonProjects/CorpusData'
-corpora_name = 'eng_corpora'
+corpora_name = 'English base2cleaned&expanded_Metko'
 useMinF = True
 minF = 10
 useMinf = False
@@ -72,72 +74,60 @@ print('loading text...')
 F_counter = read_text(text_path)
 print('text loaded')
 F_filtered_counter = F_counter
-Lt = sum(F_counter.values())
+La = sum(F_counter.values())
 if useMinF:
     F_filtered_counter = Counter({k: v for k, v in F_counter.items() if v >= minF})
 if useMinf:
-    F_filtered_counter = Counter({k: v for k, v in F_counter.items() if v / Lt >= minf})
-# Lt = sum(F_filtered_counter.values())
-f_counter = Counter({k: v / Lt for k, v in F_filtered_counter.most_common()})
+    F_filtered_counter = Counter({k: v for k, v in F_counter.items() if v / La >= minf})
+
+f_counter = Counter({k: v / La for k, v in F_filtered_counter.most_common()})
 unique_words = {word for word in f_counter if word not in words_corpora}
-Lu = len(unique_words)
 nc = n + 1
-Lc = sum_L + Lu
-words_corpora_corrected = {}
+Lc = sum_L + La
+add_text_words_stats = {}
 for key in f_counter:
+    Fa = F_filtered_counter[key]
+    fa = f_counter[key]
     if key in unique_words:
-        Fc = 1
-        f = 0
-        fc = 1 / (nc * Lu)
-        fw = 0
-        fwc = 1 / Lc
+        print(key)
+        Fc = Fa
+        fc = fa / nc
+        fwc = fa / Lc
         ntc = 1
-        sigmac = math.sqrt((1 - (1 / nc)) / nc) / Lu
-        sigmawc = math.sqrt(((1 / Lu) - (1 / Lc)) / Lc)
+        fs = ((Fa ** 2) / (La ** 2)) / nc
+        fws = ((Fa ** 2) / La) / Lc
     else:
-        Fc = words_corpora[key][0]
-        fc = (words_corpora[key][1] * n) / nc  # words_corpora[key][1]
-        fwc = words_corpora[key][0] / Lc  # words_corpora[key][2]
-        ntc = words_corpora[key][3]
-        sigmac = math.sqrt((words_corpora[key][7] / nc) - (fc ** 2))
-        sigmawc = math.sqrt((words_corpora[key][6] - (Fc ** 2) / Lc) / Lc)
-    words_corpora_corrected[key] = [Fc, fc, fwc, ntc, sigmac, sigmawc]
+        Fc = words_corpora[key][0] + Fa
+        fc = (words_corpora[key][1] * n + fa) / nc
+        fwc = (words_corpora[key][0] + Fa) / Lc
+        ntc = words_corpora[key][3] + 1
+        fs = (words_corpora[key][7] + ((Fa ** 2) / (La ** 2))) / nc
+        fws = (words_corpora[key][6] + ((Fa ** 2) / La)) / Lc
+    sigma_c = math.sqrt(fs - (fc ** 2))
+    sigma_wc = math.sqrt(fws - (fwc ** 2))
+    add_text_words_stats[key] = [Fc, fc, fwc, ntc, sigma_c, sigma_wc]
 
-rm1_counter = Counter({k: f * math.log(nc / words_corpora_corrected[k][3]) for k, f in f_counter.items()})
+rm1_counter = Counter({k: f * math.log(nc / add_text_words_stats[k][3], 10) for k, f in f_counter.items()})
 
-rm2_counter = Counter({k: f / words_corpora_corrected[k][1] for k, f in f_counter.items()
-                       if f / words_corpora_corrected[k][1] > 1.0})
-rm2w_counter = Counter({k: f / words_corpora_corrected[k][2] for k, f in f_counter.items()
-                        if f / words_corpora_corrected[k][2] > 1.0})
+rm3_counter = Counter({k: (f - add_text_words_stats[k][1]) / add_text_words_stats[k][4]
+                       for k, f in f_counter.items() if f - add_text_words_stats[k][1] > 0.0})
+rm3w_counter = Counter({k: (f - add_text_words_stats[k][2]) / add_text_words_stats[k][5]
+                        for k, f in f_counter.items() if f - add_text_words_stats[k][2] > 0.0})
 
-rm3_counter = Counter({k: (f - words_corpora_corrected[k][1]) / words_corpora_corrected[k][4]
-                       for k, f in f_counter.items() if f - words_corpora_corrected[k][1] > 0.0})
-rm3w_counter = Counter({k: (f - words_corpora_corrected[k][2]) / words_corpora_corrected[k][5]
-                        for k, f in f_counter.items() if f - words_corpora_corrected[k][2] > 0.0})
-
-rm4_counter = Counter({k: (f / words_corpora_corrected[k][1]) * math.log(nc / words_corpora_corrected[k][3])
-                       for k, f in f_counter.items() if f / words_corpora_corrected[k][1] > 1.0})
-rm4w_counter = Counter({k: (f / words_corpora_corrected[k][2]) * math.log(nc / words_corpora_corrected[k][3])
-                        for k, f in f_counter.items() if f / words_corpora_corrected[k][2] > 1.0})
-
-rm5_counter = Counter({k: ((f - words_corpora_corrected[k][1]) / words_corpora_corrected[k][4]) *
-                          math.log(nc / words_corpora_corrected[k][3]) for k, f in f_counter.items()
-                       if f - words_corpora_corrected[k][1] > 0.0})
-rm5w_counter = Counter({k: ((f - words_corpora_corrected[k][2]) / words_corpora_corrected[k][5]) *
-                           math.log(nc / words_corpora_corrected[k][3]) for k, f in f_counter.items()
-                        if f - words_corpora_corrected[k][2] > 0.0})
+rm5_counter = Counter({k: ((f - add_text_words_stats[k][1]) / add_text_words_stats[k][4]) *
+                          math.log(nc / add_text_words_stats[k][3]) for k, f in f_counter.items()
+                       if f - add_text_words_stats[k][1] > 0.0})
+rm5w_counter = Counter({k: ((f - add_text_words_stats[k][2]) / add_text_words_stats[k][5]) *
+                           math.log(nc / add_text_words_stats[k][3]) for k, f in f_counter.items()
+                        if f - add_text_words_stats[k][2] > 0.0})
 
 current_path = os.path.dirname(os.path.abspath(__file__))
 new_path = os.path.join(current_path, 'ResultRelativeMethod_'+corpora_name)
 if not os.path.exists(new_path):
     os.makedirs(new_path)
 save_rang_result(os.path.join(new_path, 'rm1.csv'), rm1_counter, F_filtered_counter, f_counter, topN)
-save_rang_result(os.path.join(new_path, 'rm2.csv'), rm2_counter, F_filtered_counter, f_counter, topN)
-save_rang_result(os.path.join(new_path, 'rm3.csv'), rm2w_counter, F_filtered_counter, f_counter, topN)
 save_rang_result(os.path.join(new_path, 'rm4.csv'), rm3_counter, F_filtered_counter, f_counter, topN)
 save_rang_result(os.path.join(new_path, 'rm5.csv'), rm3w_counter, F_filtered_counter, f_counter, topN)
-save_rang_result(os.path.join(new_path, 'rm6.csv'), rm4_counter, F_filtered_counter, f_counter, topN)
-save_rang_result(os.path.join(new_path, 'rm7.csv'), rm4w_counter, F_filtered_counter, f_counter, topN)
 save_rang_result(os.path.join(new_path, 'rm8.csv'), rm5_counter, F_filtered_counter, f_counter, topN)
 save_rang_result(os.path.join(new_path, 'rm9.csv'), rm5w_counter, F_filtered_counter, f_counter, topN)
 print('n={0}, sum L={1}'.format(nc, Lc))
