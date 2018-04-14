@@ -15,6 +15,7 @@ def read_corpora(main_folder_path, new_file_path):
         n += len(files)
     processed_n = 0
     pattern = r"[^\w\s\-\']"
+    print('start reading corpora')
     for root, dirs, files in os.walk(main_folder_path):
         for name in files:
             file = open(os.path.join(root, name), 'r', encoding='utf-8')
@@ -43,7 +44,9 @@ def read_corpora(main_folder_path, new_file_path):
             g_fcm_counter += l_fcm_counter
             SumL += L
             processed_n += 1
-        print('{0:.2f} %'.format(processed_n/n*100))
+            if processed_n % 50 == 0:
+                print('{0:.2f} %'.format(processed_n/n*100))
+    print('{0:.2f} %'.format(processed_n / n * 100))
     for key in g_fm_counter:
         g_fm_counter[key] /= n
     for key in g_sumF_counter:
@@ -76,7 +79,8 @@ def write_dict(path, F, fm, fmw, n_t, sigma, sigmaw, fc, fq):
             writer.writerow([key, F[key], fm[key], fmw[key], n_t[key], sigma[key], sigmaw[key], fc[key], fq[key]])
 
 
-corpora_path = 'D:/Research/Corpora/eng_corpora'
+# corpora_path = 'D:/Test'
+corpora_path = 'D:/English base2cleaned&expanded_Metko'
 start_time = time.perf_counter()
 current_path = os.path.dirname(os.path.abspath(__file__))
 new_path = os.path.join(current_path, 'CorpusData')
